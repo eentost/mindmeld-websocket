@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      REACT_APP_WS_URL: ws://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - mindmeld
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://mindmeld:mindmeld@postgres:5432/mindmeld
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - mindmeld
+    volumes:
+      - ./backend:/app
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: mindmeld-postgres
+    environment:
+      POSTGRES_USER: mindmeld
+      POSTGRES_PASSWORD: mindmeld
+      POSTGRES_DB: mindmeld
+    ports:
+      - "5432:5432"
+    networks:
+      - mindmeld
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: mindmeld-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - mindmeld
+    volumes:
+      - redis_data:/data
+
+networks:
+  mindmeld:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
